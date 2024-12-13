@@ -1,0 +1,189 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="p-6 rounded-lg">
+    <!-- Bloc regroupé des informations -->
+    <div class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm mb-8">
+        <h2 class="text-lg font-bold text-blue-600 mb-4 flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
+            </svg>
+            <span>Informations</span>
+        </h2>
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Card Informations Client -->
+            <div class="bg-white-50 p-6 rounded-lg border border-gray-300">
+                <h3 class="text-md font-bold text-blue-600 mb-4">Informations du client</h3>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Nom :</span> {{ client.surname }}
+                </p>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Adresse :</span> {{ client.adresse }}
+                </p>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Téléphone :</span> {{ client.telephone }}
+                </p>
+                <p class="text-gray-600">
+                    <span class="font-light">Nombre de dettes :</span> {{ client.dettes|length }}
+                </p>
+            </div>
+
+            <!-- Card Informations Dette -->
+            <div class="bg-white-50 p-6 rounded-lg border border-gray-300">
+                <h3 class="text-md font-bold text-blue-600 mb-4">Informations de la dette</h3>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Montant total :</span> {{ dette.montant | number_format(0, '.', ',') }} CFA
+                </p>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Montant versé :</span> {{ dette.montantVerser | number_format(0, '.', ',') }} CFA
+                </p>
+                <p class="text-gray-600 mb-2">
+                    <span class="font-light">Montant restant :</span> {{ dette.montant - dette.montantVerser | number_format(0, '.', ',') }} CFA
+                </p>
+                <p class="text-gray-600">
+                    <span class="font-light">Statut :</span>
+                    {% if dette.montant - dette.montantVerser == 0 %}
+                        <span class="text-green-500 font-semibold">Soldée</span>
+                    {% else %}
+                        <span class="text-red-500 font-semibold">Non soldée</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloc des tableaux -->
+    <div class="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
+        <h2 class="text-lg font-bold text-blue-600 mb-4">Détails</h2>
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Tableau Paiements -->
+            <div class="bg-white p-6 rounded-lg border border-gray-300">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-blue-600">Liste Paiements</h3>
+                    <!-- Bouton pour afficher la popup uniquement si la dette n'est pas soldée -->
+                    {% if dette.montant - dette.montantVerser > 0 %}
+    <button
+        id="open-payment-popup"
+        class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600"
+    >
+        Payer
+    </button>
+{% endif %}
+
+
+                </div>
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-600">Date</th>
+                            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-600">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paiement in paiements %}
+                            <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                                <td class="px-4 py-2 text-sm text-gray-700">{{ paiement.date|date('Y-m-d') }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-700">{{ paiement.montant | number_format(0, '.', ',') }} CFA</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="2" class="px-4 py-2 text-sm text-center text-gray-500">Aucun paiement trouvé.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Popup Formulaire de Paiement -->
+            <div
+    id="payment-popup"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50"
+>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-blue-600">Ajouter un Paiement</h3>
+            <button
+                id="close-payment-popup"
+                class="text-gray-500 hover:text-gray-700 text-2xl"
+            >
+                &times;
+            </button>
+        </div>
+        {{ form_start(form) }}
+        <div class="space-y-4">
+            <div>
+                {{ form_row(form.date, {'label': 'Date de Paiement', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md'}}) }}
+            </div>
+            <div>
+                {{ form_row(form.montant, {'label': 'Montant', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md'}}) }}
+            </div>
+        </div>
+        <div class="flex justify-end space-x-4 mt-4">
+            <button type="button" id="cancel-payment-popup" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                Annuler
+            </button>
+            <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
+                Confirmer
+            </button>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<script>
+    document.getElementById('open-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.remove('hidden');
+    });
+
+    document.getElementById('close-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.add('hidden');
+    });
+
+    document.getElementById('cancel-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.add('hidden');
+    });
+</script>
+
+            <!-- Tableau Articles -->
+            <div class="bg-white p-6 rounded-lg border border-gray-300">
+                <h3 class="text-lg font-bold text-blue-600 mb-4">Liste Articles</h3>
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-600">Libellé</th>
+                            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-600">Quantité</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in articles %}
+                            <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                                <td class="px-4 py-2 text-sm text-gray-700">{{ article.nom }}</td>
+                                
+                                <td class="px-4 py-2 text-sm text-gray-700">{{ article.qteStock }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="px-4 py-2 text-sm text-center text-gray-500">Aucun article trouvé.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('open-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.remove('hidden');
+    });
+
+    document.getElementById('close-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.add('hidden');
+    });
+
+    document.getElementById('cancel-payment-popup').addEventListener('click', () => {
+        document.getElementById('payment-popup').classList.add('hidden');
+    });
+</script>
+{% endblock %}
