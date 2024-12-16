@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ArticleRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -21,6 +23,17 @@ class Article
 
     #[ORM\Column]
     private ?float $prix = null;
+
+    /**
+     * @var Collection<int, Approvisionnement>
+     */
+    #[ORM\OneToMany(targetEntity: Approvisionnement::class, mappedBy: 'article')]
+    private Collection $approvisionnements;
+
+    public function __construct()
+    {
+        $this->approvisionnements = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -59,6 +72,36 @@ class Article
     public function setPrix(float $prix): static
     {
         $this->prix = $prix;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Approvisionnement>
+     */
+    public function getApprovisionnements(): Collection
+    {
+        return $this->approvisionnements;
+    }
+
+    public function addApprovisionnement(Approvisionnement $approvisionnement): static
+    {
+        if (!$this->approvisionnements->contains($approvisionnement)) {
+            $this->approvisionnements->add($approvisionnement);
+            $approvisionnement->setArticle($this);
+        }
+
+        return $this;
+    }
+
+    public function removeApprovisionnement(Approvisionnement $approvisionnement): static
+    {
+        if ($this->approvisionnements->removeElement($approvisionnement)) {
+            // set the owning side to null (unless already changed)
+            if ($approvisionnement->getArticle() === $this) {
+                $approvisionnement->setArticle(null);
+            }
+        }
 
         return $this;
     }

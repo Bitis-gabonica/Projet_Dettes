@@ -2,49 +2,28 @@
 
 {% block body %}
 <div class="p-6 bg-white rounded-lg shadow">
-    <!-- Client Information Block -->
-    <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200 mb-6">
-        <div>
-            <h2 class="text-lg font-bold text-indigo-500 flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
-                </svg>
-                <span>Informations du client</span>
-            </h2>
-            <p class="text-gray-600 mt-2">
-                <span class="font-light">Nom :</span> {{ client.surname }}
-            </p>
-            <p class="text-gray-600">
-                <span class="font-light">Adresse :</span> {{ client.adresse }}
-            </p>
-            <p class="text-gray-600">
-                <span class="font-light">Téléphone :</span> {{ client.telephone }}
-            </p>
-            <p class="text-gray-600">
-                <span class="font-light">Nombre de dettes :</span> {{ client.dettes|length }}
-            </p>
-        </div>
-        <div class="text-right">
-            <p class="text-gray-500 text-lg">Total Dû</p>
-            <p class="text-4xl font-normal text-gray-800">{{totalDus}} CFA</p>
-        </div>
-    </div>
-
     <!-- Titre -->
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-2 text-indigo-500">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5c4.142 0 7.5.895 7.5 2s-3.358 2-7.5 2-7.5-.895-7.5-2 3.358-2 7.5-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 11.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2m15 3.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2m15 3.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2" />
             </svg>
-            <h1 class="text-lg font-bold">Liste Dettes {{ client.surname }}</h1>
+            <h1 class="text-lg font-bold">Liste Dettes</h1>
         </div>
-        <a href="{{ path('dette.create', { id: client.id }) }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600">
+        <a href="{{ path('client.create') }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600">
             Créer
         </a>
     </div>
-    
 
-    <!-- Tableau -->
+     <!-- Filtres -->
+    <div class="flex space-x-4 mb-4">
+    {{ form_start(form, {'attr': {'id': 'filter-form', 'class': 'space-y-2'}}) }}
+        {{ form_widget(form.statut, {'attr': {'class': 'p-2 border border-gray-200 rounded-md ', 'onchange': 'submitFilterForm()'}}) }}
+    {{ form_end(form) }}
+</div>
+
+     <!-- Tableau -->
     <div class="overflow-x-auto">
         <table class="min-w-full table-auto">
             <thead class="bg-gray-100">
@@ -99,4 +78,10 @@
         </table>
     </div>
 </div>
+<script>
+    function submitFilterForm() {
+        document.getElementById('filter-form').submit();
+    }
+</script>
+
 {% endblock %}

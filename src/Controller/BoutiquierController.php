@@ -9,18 +9,85 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\Entity\Client;
 use App\Entity\Dette;
 use App\Entity\Paiement;
+use App\Entity\Approvisionnement;
 use App\Entity\User;
 use App\Form\ClientType;
+use App\Form\DetteFilterType;
 use App\Form\DetteType;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use App\Form\FilterClientType;
+use App\Form\searchClientByTelType;
 use App\Form\PaiementType;
+use App\Repository\ArticleRepository;
 use App\Repository\DetteRepository;
 
 class BoutiquierController extends AbstractController
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//PARTIE CLIENT////
 {
+    #[Route('/boutiquier/dashboard', name: 'dashboardBoutiquier.index')]
+    public function dashboardBoutiquier(ClientRepository $clientRepository,DetteRepository $detteRepository,Request $request,ArticleRepository $articleRepository): Response
+    {
+        $clients=$clientRepository->findAll();
+        $dettes=$detteRepository->findAll();
+        $articles=$articleRepository->findAll();
+        $totalArticleEnStock=0;
+        $dettesNonSolde=[];
+        $form = $this->createForm(searchClientByTelType::class);
+        $form->handleRequest($request);
+
+        $client=null;
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data=$form->getData();
+            $client = $clientRepository->findOneBy(['telephone' => $data['numero']]);
+
+               
+        }
+    
+
+        $totalDetteNonSolde=0;
+        foreach ($dettes as $key) {
+            if ($key->isStatut() == false) {
+                $totalDetteNonSolde += $key->getMontant() - $key->getMontantVerser();
+
+
+            }
+        }
+        foreach ($articles as $key) {
+            if ($key->getQteStock() != 0) {
+                $totalArticleEnStock ++;
+
+
+            }
+        }
+        foreach ($dettes as $key) {
+            if ($key->isStatut() == false) {
+                $dettesNonSolde[]=$key;
+            }
+        }
+
+        
+
+
+
+
+
+
+        return $this->render('boutiquier/dashboard.html.twig', [
+            'clients' => $clients, 
+            'dettes' => $dettes,
+            'totalDetteNonSolde' => $totalDetteNonSolde,
+            'totalArticleEnStock' => $totalArticleEnStock,
+            'dettesNonSolde' => $dettesNonSolde,
+            'form'=> $form->createView(),
+             'client'=> $client,
+        ]);
+    }
+
+
+
     #[Route('/boutiquier/liste-clients', name: 'client.index')]
     public function index(ClientRepository $clientRepository, Request $request): Response
     {
@@ -99,53 +166,93 @@ class BoutiquierController extends AbstractController
         ]);
     }
     #[Route('/dette/{id}/form', name: 'dette.create')]
-    public function createDette(Request $request, EntityManagerInterface $entityManager,int $id): Response
-    {
-        $dette = new Dette();
-        $form = $this->createForm(DetteType::class, $dette);
-        $form->handleRequest($request);
+public function createDette(Request $request, EntityManagerInterface $entityManager, int $id, ArticleRepository $articleRepository): Response
+{
+    $client = $entityManager->getRepository(Client::class)->find($id);
+    if (!$client) {
+        throw $this->createNotFoundException('Client non trouvé.');
+    }
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $client = $entityManager->getRepository(Client::class)->find($id);
-            // Ajout du client à la dette
+    $articles = $articleRepository->findAll();
+    $dette = new Dette();
+    $form = $this->createForm(DetteType::class, $dette);
+    $form->handleRequest($request);
 
-                $dette->setClient($client);
-                $client->addDette($dette);
-            // Calcul du montant restant
+    if ($form->isSubmitted() && $form->isValid()) {
+        try {
+            $dette->setClient($client);
+            $client->addDette($dette);
+
+            // Vérifier et traiter les articles soumis
+            $submittedArticles = $request->request->all('articles');
+            if (!is_array($submittedArticles)) {
+                throw new \UnexpectedValueException('Les données pour les articles sont invalides.');
+            }
+
+            $montant = 0;
+
+            foreach ($submittedArticles as $articleId => $data) {
+                if (isset($data['selected']) && $data['selected']) {
+                    $article = $articleRepository->find($articleId);
+                    if (!$article) {
+                        throw new \RuntimeException("Article avec ID {$articleId} non trouvé.");
+                    }
+
+                    $approvisionnement = new Approvisionnement();
+                    $approvisionnement->setArticle($article);
+                    $approvisionnement->setQuantite((int) $data['quantite']);
+                    $approvisionnement->setTotal($article->getPrix(), (int) $data['quantite']);
+                    $approvisionnement->setDette($dette);
+                    $entityManager->persist($approvisionnement);
+                    $dette->addApprovisionnement($approvisionnement);
+
+                    $montant += $approvisionnement->getTotal();
+                }
+            }
+            $dette->setMontantVerser(0);
+            $dette->setMontant($montant);
+            if ($dette->getMontant() == $dette->getMontantVerser()) {
+                $dette->setStatut(true);
+            } else {
+                $dette->setStatut(false);
+            }
             $dette->calculateMontantRestant();
-            // Ajout des articles
-            foreach ($dette->getArticles() as $article) {
-                $dette->addArticle($article);
-            }
-
-            // Ajout des paiements
-            foreach ($dette->getPaiements() as $paiement) {
-                $paiement->setDette($dette);
-            }
 
             $entityManager->persist($dette);
             $entityManager->flush();
 
             $this->addFlash('success', 'La dette a été créée avec succès.');
-            return $this->redirectToRoute('client.index');
-        }
 
-        return $this->render('/boutiquier/client/formDette.html.twig', [
-            'form' => $form->createView(),
-            'dette' => $dette,
-        ]);
+            // Redirection après succès
+            return $this->redirectToRoute('client.index');
+        } catch (\Exception $e) {
+            // Log ou affichage d'erreur
+            $this->addFlash('error', 'Une erreur est survenue : ' . $e->getMessage());
+        }
     }
+
+    return $this->render('/boutiquier/client/formDette.html.twig', [
+        'form' => $form->createView(),
+        'articles' => $articles,
+    ]);
+}
+
+
+    
+
+
     #[Route('/client/dettes/{id}/details', name: 'client.details')]
     public function listerDetailsDettesClient(
         DetteRepository $detteRepository,
         Request $request,
         int $id,
-        EntityManagerInterface $entityManager
-    ): Response {
+        EntityManagerInterface $entityManager  ): Response {
+
         $dette = $entityManager->getRepository(Dette::class)->find($id);
         $client = $dette->getClient();
         $articles = $dette->getArticles();
         $paiements = $dette->getPaiements();
+        $approvisionnements = $dette->getApprovisionnements();
     
         // Création du formulaire de paiement
         $paiement = new Paiement();
@@ -170,10 +277,38 @@ class BoutiquierController extends AbstractController
             'articles' => $articles,
             'dette' => $dette,
             'client' => $client,
+            'approvisionnements' => $approvisionnements,
             'form' => $form->createView(), // Passer le formulaire à la vue
         ]);
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////PARTIE DETTES///
+    #[Route('/boutiquier/dettes', name: 'dettes.index')]
+    public function listerDettes(DetteRepository $detteRepository, Request $request): Response
+    {
+        $dettes = $detteRepository->findAll(); // Récupère toutes les dettes
+        $form = $this->createForm(DetteFilterType::class);
+        $form->handleRequest($request);
     
-
-
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+    
+            if (!is_null($data['statut'])) { // Filtrer uniquement si le statut est défini
+                $statut = (bool) $data['statut'];
+    
+                // Filtrage en mémoire côté PHP
+                $dettes = array_filter($dettes, function (Dette $dette) use ($statut) {
+                    return $dette->isStatut() === $statut;
+                });
+            }
+        }
+    
+        return $this->render('boutiquier/dette/dettes.html.twig', [
+            'dettes' => $dettes,
+            'form' => $form->createView(),
+        ]);
+    }
+    
+    
 }

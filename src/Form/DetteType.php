@@ -2,11 +2,9 @@
 
 namespace App\Form;
 
-use App\Entity\Article;
-use App\Entity\Client;
 use App\Entity\Dette;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -22,26 +20,13 @@ class DetteType extends AbstractType
                     'class' => 'form-control',
                 ],
             ])
-            ->add('montant', null, [
-                'label' => 'Montant total',
+            ->add('approvisionnements', CollectionType::class, [
+                'entry_type' => ApprovisionnementType::class, // Utilisation d'un sous-formulaire pour les approvisionnements
+                'allow_add' => true, // Permet l'ajout d'éléments dynamiquement
+                'allow_delete' => true, // Permet la suppression d'éléments
+                'by_reference' => false, // Nécessaire pour les collections dans Doctrine
                 'attr' => [
-                    'class' => 'form-control',
-                ],
-            ])
-            ->add('montantVerser', null, [
-                'label' => 'Montant versé',
-                'attr' => [
-                    'class' => 'form-control',
-                ],
-            ])
-            ->add('articles', EntityType::class, [
-                'class' => Article::class,
-                'choice_label' => 'nom', // Nom de l'article affiché
-                'multiple' => true,
-                'expanded' => false, // Affichage sous forme de liste déroulante
-                'label' => 'Articles',
-                'attr' => [
-                    'class' => 'form-control select-articles',
+                    'class' => 'form-collection',
                 ],
             ]);
     }

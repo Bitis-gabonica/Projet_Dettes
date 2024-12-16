@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Approvisionnement;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -74,6 +75,11 @@ class AppFixtures extends Fixture
             $dette->setMontantRestant($dette->getMontant() - $dette->getMontantVerser());
             $dette->setClient($client);
             $paiement->setDette($dette);
+            if ($dette->getMontant() == $dette->getMontantVerser()) {
+                $dette->setStatut(true);
+            } else {
+                $dette->setStatut(false);
+            }
 
             $manager->persist($dette);
             $manager->persist($paiement);
@@ -83,8 +89,21 @@ class AppFixtures extends Fixture
             $article->setNom('article' . $i);
             $article->setPrix(20000);
             $article->setQteStock(10);
+            $dette->addArticle($article);
+            // Creation de l'approvisionnement
 
+            $approvisionnement=new Approvisionnement();
+            $approvisionnement->setDette($dette);
+            $approvisionnement->setArticle($article);
+            $approvisionnement->setQuantite(10);
+            $approvisionnement->setTotal($article->getPrix(),$approvisionnement->getQuantite());
+            $dette->addApprovisionnement($approvisionnement);
+
+
+            $manager->persist($dette);
+            $manager->persist($paiement);
             $manager->persist($article);
+            $manager->persist($approvisionnement);
         }
 
         // Sauvegarde dans la base

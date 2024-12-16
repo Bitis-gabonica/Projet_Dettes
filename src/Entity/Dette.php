@@ -44,10 +44,20 @@ class Dette
     #[ORM\ManyToMany(targetEntity: Article::class)]
     private Collection $articles;
 
+    /**
+     * @var Collection<int, Approvisionnement>
+     */
+    #[ORM\OneToMany(targetEntity: Approvisionnement::class, mappedBy: 'dette')]
+    private Collection $approvisionnements;
+
+    #[ORM\Column]
+    private ?bool $statut = null;
+
     public function __construct()
     {
         $this->paiements = new ArrayCollection();
         $this->articles = new ArrayCollection();
+        $this->approvisionnements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -170,6 +180,48 @@ class Dette
     public function removeArticle(Article $article): static
     {
         $this->articles->removeElement($article);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Approvisionnement>
+     */
+    public function getApprovisionnements(): Collection
+    {
+        return $this->approvisionnements;
+    }
+
+    public function addApprovisionnement(Approvisionnement $approvisionnement): static
+    {
+        if (!$this->approvisionnements->contains($approvisionnement)) {
+            $this->approvisionnements->add($approvisionnement);
+            $approvisionnement->setDette($this);
+        }
+
+        return $this;
+    }
+
+    public function removeApprovisionnement(Approvisionnement $approvisionnement): static
+    {
+        if ($this->approvisionnements->removeElement($approvisionnement)) {
+            // set the owning side to null (unless already changed)
+            if ($approvisionnement->getDette() === $this) {
+                $approvisionnement->setDette(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isStatut(): ?bool
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(bool $statut): static
+    {
+        $this->statut = $statut;
 
         return $this;
     }

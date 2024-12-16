@@ -4,11 +4,11 @@
 <div class="p-6 bg-white rounded-lg shadow">
     <!-- Titre -->
     <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center space-x-2 text-blue-600">
+        <div class="flex items-center space-x-2 text-indigo-500">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
             </svg>
-            <h1 class="text-xl font-bold">Créer une nouvelle dette</h1>
+            <h1 class="text-xl text-indigo-500 font-bold">Créer une nouvelle dette</h1>
         </div>
     </div>
 
@@ -19,22 +19,51 @@
         <div>
             {{ form_row(form.date, {'label': 'Date de la dette', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'}}) }}
         </div>
+       
+        <!-- Tableau des articles disponibles -->
         <div>
-            {{ form_row(form.montant, {'label': 'Montant total', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'}}) }}
-        </div>
-        <div>
-            {{ form_row(form.montantVerser, {'label': 'Montant versé', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'}}) }}
-        </div>
+            <label for="articles" class="block text-gray-700 font-medium mb-2">Articles disponibles</label>
+            <table class="min-w-full table-auto border border-gray-300 rounded-md">
+                <thead class="bg-indigo-500 ">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-white">Sélectionner</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-white">Nom de l'article</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-white">Prix</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-white">Quantité</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                        <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                            <!-- Checkbox pour sélectionner l'article -->
+                            <td class="px-4 py-2">
+                                <input type="checkbox" name="articles[{{ article.id }}][selected]" value="1" class="checkbox">
+                            </td>
 
-        <!-- Sélection des articles -->
-        <div>
-            {{ form_row(form.articles, {'label': 'Articles', 'attr': {'class': 'block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'}}) }}
+                            <!-- Nom de l'article -->
+                            <td class="px-4 py-2">
+                                {{ article.nom }}
+                            </td>
+
+                            <!-- Prix de l'article -->
+                            <td class="px-4 py-2">
+                                {{ article.prix | number_format(2, '.', ',') }} CFA
+                            </td>
+
+                            <!-- Champ pour la quantité -->
+                            <td class="px-4 py-2">
+                                <input type="number" name="articles[{{ article.id }}][quantite]" min="1" class="block w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm">
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <!-- Bouton d'envoi -->
     <div class="mt-6">
-        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md shadow">
+        <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-200 text-white font-medium py-2 px-6 rounded-md shadow">
             Enregistrer
         </button>
     </div>

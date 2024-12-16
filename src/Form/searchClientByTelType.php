@@ -3,13 +3,11 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class FilterClientType extends AbstractType
+class searchClientByTelType  extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -18,14 +16,6 @@ class FilterClientType extends AbstractType
                 'label' => false,
                 'attr' => [
                     'placeholder' => 'Numéro de téléphone',
-                ],
-                'required' => false, // Permettre que ce champ soit vide
-            ])
-            ->add('createUser', ChoiceType::class, [
-                'choices' => [
-                    'Tout' => null,
-                    'Utilisateur' => true,
-                    'Non utilisateur' => false,
                 ],
                 'required' => false, // Permettre que ce champ soit vide
             ]);
