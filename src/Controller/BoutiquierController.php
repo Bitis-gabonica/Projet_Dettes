@@ -22,17 +22,26 @@ use App\Form\searchClientByTelType;
 use App\Form\PaiementType;
 use App\Repository\ArticleRepository;
 use App\Repository\DetteRepository;
+use App\Repository\DemandeDetteRepository;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use App\Entity\DemandeDette;
+use App\Form\FiltreDemandeType;
+use Symfony\Component\Validator\Constraints\IsNull;
+use App\Form\ValiderType;
 
 class BoutiquierController extends AbstractController
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //PARTIE CLIENT////
 {
     #[Route('/boutiquier/dashboard', name: 'dashboardBoutiquier.index')]
-    public function dashboardBoutiquier(ClientRepository $clientRepository,DetteRepository $detteRepository,Request $request,ArticleRepository $articleRepository): Response
+    public function dashboardBoutiquier(ClientRepository $clientRepository,DetteRepository $detteRepository,Request $request,ArticleRepository $articleRepository,DemandeDetteRepository $demandeDetteRepository): Response
     {
         $clients=$clientRepository->findAll();
         $dettes=$detteRepository->findAll();
         $articles=$articleRepository->findAll();
+        $demandeDettes=$demandeDetteRepository->findAll();
         $totalArticleEnStock=0;
         $dettesNonSolde=[];
         $form = $this->createForm(searchClientByTelType::class);
@@ -83,6 +92,7 @@ class BoutiquierController extends AbstractController
             'dettesNonSolde' => $dettesNonSolde,
             'form'=> $form->createView(),
              'client'=> $client,
+             'demandeDettes'=>$demandeDettes
         ]);
     }
 
@@ -309,6 +319,124 @@ public function createDette(Request $request, EntityManagerInterface $entityMana
             'form' => $form->createView(),
         ]);
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////PARTIE Demandes de DETTES///
+    #[Route('/boutiquier/demandes-dettes', name: 'demandesDettes.index')]
+    public function listerDemandesDettes(DemandeDetteRepository $demandeDetteRepository,Request $request): Response
+    {
+        $demandeDettes = $demandeDetteRepository->findAll();
+        $montantsParDemande = [];
+foreach ($demandeDettes as $demande) {
+    $total = 0;
+    foreach ($demande->getDetails() as $detail) {
+        $total += $detail->getPrix();
+    }
+    $montantsParDemande[$demande->getId()] = $total;
+}
+
+
+            $form=$this->createForm(FiltreDemandeType::class);
+            $form->handleRequest($request);
+            if ($form->isSubmitted() && $form->isValid()) {
+                $data = $form->getData();
+        
+                if (!is_null($data['statut'])) { // Filtrer uniquement si le statut est défini
+                    $statut = (bool) $data['statut'];
+        
+                    // Filtrage en mémoire côté PHP
+                    $demandeDettes = array_filter($demandeDettes, function (DemandeDette $demandeDette) use ($statut) {
+                        return $demandeDette->isStatut() === $statut;
+                    });
+                }
+            }
+
+
+        return $this->render('boutiquier/demandeDette/listDemande.html.twig', [
+            'demandesDettes' => $demandeDettes,
+            'montant'=> $montantsParDemande,
+            'form'=>$form,
+        ]);
     
+    }
+    #[Route('/boutiquier/demandes-dettes/{id}/details', name: 'demandesDettesDetails.index')]
+    public function listerDemandesDettesDetails(
+        DemandeDetteRepository $demandeDetteRepository,
+        int $id,
+        EntityManagerInterface $entityManager
+    ): Response {
+
+        $request = Request::createFromGlobals();
+        $demandeDette = $entityManager->getRepository(DemandeDette::class)->find($id);
+        $client = $demandeDette->getClient();
+        $montantTotal = 0;
+        $details = $demandeDette->getDetails();
+
+        foreach ($details as $value) {
+            $montantTotal += $value->getPrix();
+        }
     
+        $form = $this->createForm(ValiderType::class);
+        $form->handleRequest($request);
+    
+        if ($form->isSubmitted()) {
+            if ($form->get('accepter')->isSubmitted() && $form->isValid()) {
+                // Statut accepté
+                $demandeDette->setStatut(null);
+    
+                $dette = new Dette();
+                $dette->setClient($client);
+                $dette->setDate($demandeDette->getDate());
+                $dette->setMontant($montantTotal);
+                $dette->setMontantVerser(0); 
+                $dette->setMontantRestant($montantTotal);
+                $dette->setStatut(false);
+                
+    
+                foreach ($demandeDette->getDetails() as $detail) {
+                    $approvisionnement = new Approvisionnement();
+                    $approvisionnement->setArticle($detail->getArticle());
+                    $approvisionnement->setQuantite($detail->getQuantite());
+                    $approvisionnement->setDette($dette);
+                    $approvisionnement->setTotal($detail->getPrix(),$detail->getQuantite());
+    
+                    $dette->addApprovisionnement($approvisionnement);
+                    $entityManager->persist($approvisionnement);
+    
+                    // Mettre à jour le montant total
+                    $dette->setMontant($dette->getMontant() + $approvisionnement->getTotal());
+                    $dette->setMontantRestant($dette->getMontantRestant() + $approvisionnement->getTotal());
+                }
+    
+                $entityManager->persist($dette);
+                $entityManager->flush();
+
+                return $this->redirectToRoute('demandesDettesDetails.index', [
+                    'id' => $id,
+                ]);
+                
+            }else if ($form->get('refuser')->isSubmitted()) {
+                $demandeDette->setStatut(false);
+            } 
+                
+            
+
+        }
+    
+        if (!$demandeDette) {
+            throw $this->createNotFoundException("Demande de dette non trouvée");
+        }
+    
+     
+    
+        return $this->render('boutiquier/demandeDette/detailsDemande.html.twig', [
+            'demandeDette' => $demandeDette,
+            'montantTotal' => $montantTotal,
+            'details' => $details,
+            'client' => $client,
+            'form' => $form->createView(),
+        ]);
+    }
+    
+
 }

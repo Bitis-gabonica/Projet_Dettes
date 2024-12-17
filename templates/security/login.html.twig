@@ -1,0 +1,55 @@
+
+ {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+        {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
+        {% endblock %}
+
+{% block body %}
+<!-- Gradient Background -->
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-white">
+    <!-- Login Form Container -->
+    <div class="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-8">
+            <!-- Logo -->
+            <div class="flex justify-center">
+                <img class="w-auto h-8" src="https://merakiui.com/images/logo.svg" alt="Logo">
+            </div>
+
+            <!-- Title -->
+            <h3 class="mt-4 text-xl font-semibold text-center text-gray-700">Bienvenue</h3>
+            <p class="mt-1 text-center text-gray-500">Se connecter</p>
+
+            <!-- Login Form -->
+            <form method="post" class="mt-6">
+                <!-- Login Field -->
+                <div>
+                    <label for="inputLogin" class="block text-sm font-medium text-gray-600">Login</label>
+                    <input type="text" id="inputLogin" name="login" placeholder="Email login"
+                        value="{{ last_username }}"
+                        class="w-full px-4 py-2 mt-1 text-gray-700 placeholder-gray-400 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring focus:ring-indigo-200">
+                </div>
+
+                <!-- Password Field -->
+                <div class="mt-4">
+                    <label for="inputPassword" class="block text-sm font-medium text-gray-600">Password</label>
+                    <input type="password" id="inputPassword" name="password" placeholder="Password"
+                        class="w-full px-4 py-2 mt-1 text-gray-700 placeholder-gray-400 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring focus:ring-indigo-200">
+                </div>
+
+                <!-- CSRF Token -->
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <!-- Forgot Password and Submit -->
+                <div class="flex items-center justify-between mt-4">
+                    <button type="submit"
+                        class="px-6 py-2 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring focus:ring-indigo-300">
+                        Se connecter
+                    </button>
+                </div>
+            </form>
+        </div>
+</div>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+{% extends 'baseClient.html.twig' %}
 
 {% block body %}
 <div class="p-6 rounded-lg">
@@ -12,7 +12,7 @@
         </h2>
         <div class="grid grid-cols-2 gap-6">
             <!-- Card Informations Client -->
-            <a href="{{ path('client.dettes', { id: client.id }) }}">
+            <a href="{{ path('clientClient.dettes', { id: client.id }) }}">
             <div class="bg-white-50 p-6 rounded-lg border border-gray-300 transform transition duration-300 hover:scale-105 cursor-pointer">
                 <h3 class="text-md font-bold text-indigo-500 mb-4">Informations du client</h3>
                 <p class="text-gray-600 mb-2">

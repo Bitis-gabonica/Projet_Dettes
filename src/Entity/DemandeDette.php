@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\DemandeDetteRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DemandeDetteRepository::class)]
@@ -22,15 +23,22 @@ class DemandeDette
     #[ORM\JoinColumn(nullable: false)]
     private ?Client $client = null;
 
+
+
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $date = null;
+
+
+
     /**
-     * @var Collection<int, Article>
+     * @var Collection<int, Details>
      */
-    #[ORM\ManyToMany(targetEntity: Article::class)]
-    private Collection $articles;
+    #[ORM\OneToMany(targetEntity: Details::class, mappedBy: 'demande')]
+    private Collection $details;
 
     public function __construct()
     {
-        $this->articles = new ArrayCollection();
+        $this->details = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -62,26 +70,47 @@ class DemandeDette
         return $this;
     }
 
-    /**
-     * @return Collection<int, Article>
-     */
-    public function getArticles(): Collection
+ 
+
+    public function getDate(): ?\DateTimeImmutable
     {
-        return $this->articles;
+        return $this->date;
     }
 
-    public function addArticle(Article $article): static
+    public function setDate(\DateTimeImmutable $date): static
     {
-        if (!$this->articles->contains($article)) {
-            $this->articles->add($article);
+        $this->date = $date;
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, Details>
+     */
+    public function getDetails(): Collection
+    {
+        return $this->details;
+    }
+
+    public function addDetail(Details $detail): static
+    {
+        if (!$this->details->contains($detail)) {
+            $this->details->add($detail);
+            $detail->setDemande($this);
         }
 
         return $this;
     }
 
-    public function removeArticle(Article $article): static
+    public function removeDetail(Details $detail): static
     {
-        $this->articles->removeElement($article);
+        if ($this->details->removeElement($detail)) {
+            // set the owning side to null (unless already changed)
+            if ($detail->getDemande() === $this) {
+                $detail->setDemande(null);
+            }
+        }
 
         return $this;
     }

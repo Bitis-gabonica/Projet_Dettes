@@ -1,0 +1,77 @@
+{% extends 'baseClient.html.twig' %}
+
+{% block body %}
+<div class="container mx-auto p-6">
+    <!-- Section Cards -->
+    <div class="flex gap-4 mb-6 w-full">
+        <!-- Carte 1 -->
+        <div class="flex-1 p-6 bg-white rounded-lg border border-gray-300 flex flex-col justify-center text-center shadow transform transition duration-300 hover:scale-105 cursor-pointer">
+            <h2 class="text-lg font-semibold text-gray-500">Nombre total de Dettes</h2>
+            <p class="text-4xl font-bold text-indigo-500">{{ dettes|length }}</p>
+            <a href="{{ path('clientClient.dettes') }}" class="text-indigo-500 hover:underline mt-2">Voir plus ➔</a>
+        </div>
+        <!-- Carte 2 -->
+        <div class="flex-1 p-6 bg-white rounded-lg border border-gray-300 flex flex-col justify-center text-center shadow transform transition duration-300 hover:scale-105 cursor-pointer">
+            <h2 class="text-lg font-semibold text-gray-500">Total des dettes non soldées</h2>
+            <p class="text-4xl font-bold text-indigo-500">{{ montant }} CFA</p>
+            
+        </div>
+        <!-- Carte 3 -->
+        <div class="flex-1 p-6 bg-white rounded-lg border border-gray-300 flex flex-col justify-center text-center shadow transform transition duration-300 hover:scale-105 cursor-pointer">
+            <h2 class="text-lg font-semibold text-gray-500">Demandes de dette</h2>
+            <p class="text-4xl font-bold text-indigo-500">{{ demandeDettes|length }}</p>
+            <a href="{{ path('mesDemandes.index') }}" class="text-indigo-500 hover:underline mt-2">Voir plus ➔</a>
+        </div>
+    </div>
+
+    <!-- Partie Tableau + Création Client -->
+    <div class="flex gap-6">
+        <!-- Partie Tableau -->
+        <div class="flex-1 bg-white rounded-lg border border-gray-300 p-4 shadow transform transition duration-300 hover:scale-105 cursor-pointer">
+            <h2 class="text-lg font-semibold text-indigo-500 mb-4">Mes Dettes</h2>
+            <table class="min-w-full table-auto">
+                <thead class="bg-indigo-500 text-white">
+                    <tr>
+                        <th class="px-4 py-2 text-center">Date</th>
+                        <th class="px-4 py-2 text-center">Montant Restant</th>
+                        <th class="px-4 py-2 text-center">Téléphone Client</th>
+                        <th class="px-4 py-2 text-center">Statut</th>
+                        <th class="px-4 py-2 text-center">Détails</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dette in dettes %}
+                        <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                            <td class="px-4 py-2 text-center">{{ dette.date|date('Y-m-d') }}</td>
+                            <td class="px-4 py-2 text-center">{{ dette.montantRestant }} CFA</td>
+                            <td class="px-4 py-2 text-center">{{ client.telephone }}</td>
+                            <td class="px-4 py-2 text-center">
+                                {% if dette.montant - dette.montantVerser == 0 %}
+                                    <span class="text-green-500 font-semibold">Soldée</span>
+                                {% else %}
+                                    <span class="text-red-500 font-semibold">Non soldée</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-2 text-center">
+                                <a href="{{ path('clientCLIENT.details', { id: dette.id }) }}" class="text-indigo-500 hover:underline">Détails</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bloc Créer Client -->
+        <div class="w-1/3 transform transition duration-300 hover:scale-105 cursor-pointer">
+            <a href="{{ path('client.create') }}">
+                <div class="bg-indigo-500 rounded-lg p-8 flex flex-col items-center justify-center text-white shadow hover:bg-indigo-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mb-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <p class="text-xl font-bold">faire Demande</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
