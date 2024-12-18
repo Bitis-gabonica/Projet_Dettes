@@ -73,7 +73,7 @@ class Details
         return $this->prix;
     }
 
-    public function setPrix(float $prix): static
+    public function setPrix(float $prix, int $quantite): static
     {
         $this->prix = $prix;
 

@@ -165,6 +165,22 @@ class BoutiquierController extends AbstractController
             $totalDus=+($dette->getMontant()-$dette->getMontantVerser())+$totalDus;
         }
 
+        $form = $this->createForm(DetteFilterType::class);
+        $form->handleRequest($request);
+    
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+    
+            if (!is_null($data['statut'])) { // Filtrer uniquement si le statut est défini
+                $statut = (bool) $data['statut'];
+    
+                // Filtrage en mémoire côté PHP
+                $dettes = $dettes->filter(function (Dette $dette) use ($statut) {
+                    return $dette->isStatut() === $statut;
+                });
+            }
+        }
+
 
         
 
@@ -172,6 +188,7 @@ class BoutiquierController extends AbstractController
             'dettes' => $dettes,
             'client' => $client,
             'totalDus' => $totalDus,
+            'form'=>$form,
             
         ]);
     }

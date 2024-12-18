@@ -111,7 +111,7 @@ class AppFixtures extends Fixture
                 $details = new Details();
                 $details->setArticle($articles[array_rand($articles)]);
                 $details->setQuantite(10);
-                $details->setPrix($details->getArticle()->getPrix() * $details->getQuantite());
+                $details->setPrix($details->getArticle()->getPrix(),$details->getQuantite());
 
                 $demande = new DemandeDette();
                 $demande->setClient($client);
@@ -126,7 +126,7 @@ class AppFixtures extends Fixture
                 $details = new Details();
                 $details->setArticle($articles[array_rand($articles)]);
                 $details->setQuantite(10);
-                $details->setPrix($details->getArticle()->getPrix() * $details->getQuantite());
+                $details->setPrix($details->getArticle()->getPrix(),$details->getQuantite());
 
                 $demande = new DemandeDette();
                 $demande->setClient($client);
