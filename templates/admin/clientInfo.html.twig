@@ -1,0 +1,103 @@
+{% extends 'baseAdmin.html.twig' %}
+
+{% block body %}
+<style>
+    /* Classe pour flouter le contenu */
+    .blur {
+        filter: blur(5px);
+        pointer-events: none; /* Empêche les interactions */
+    }
+
+    /* Assurez-vous que la popup est au-dessus */
+    #modal {
+        z-index: 50; /* Popup au-dessus */
+    }
+
+    /* Arrière-plan semi-transparent */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5); /* Couche semi-transparente */
+        z-index: 40;
+    }
+</style>
+<div class="p-6 bg-white rounded-lg shadow">
+    <!-- Client Information Block -->
+    <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200 mb-6">
+        <div>
+            <h2 class="text-lg font-bold text-indigo-500 flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
+                </svg>
+                <span>Informations du client</span>
+            </h2>
+            <p class="text-gray-600 mt-2">
+                <span class="font-light">Nom :</span> {{ client.surname }}
+            </p>
+            <p class="text-gray-600">
+                <span class="font-light">Adresse :</span> {{ client.adresse }}
+            </p>
+            <p class="text-gray-600">
+                <span class="font-light">Téléphone :</span> {{ client.telephone }}
+            </p>
+            <p class="text-gray-600">
+                <span class="font-light">Nombre de dettes :</span> {{ client.dettes|length }}
+            </p>
+            <p class="text-gray-600">
+                <span class="font-light">Compte utilisateur :</span>  
+                {% if client.utilisateur is not null %}
+                    <span class="px-2 py-0.5 text-xs font-medium tracking-wide text-green-500 bg-green-50 rounded-full">Oui</span>
+                {% else %}
+                    <span class="px-2 py-0.5 text-xs font-medium tracking-wide text-red-500 bg-red-50 rounded-full">Non</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="text-right">
+            {% if client.utilisateur is null %}
+            <button 
+                onclick="openModal()" 
+                class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600">
+                Créer
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 flex items-center justify-center hidden">
+    <div class="modal-overlay"></div>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md z-50">
+        <h3 class="text-lg font-bold text-indigo-500 mb-4">Créer un utilisateur</h3>
+        {{ form_start(userForm) }}
+            <div class="mb-4">
+                {{ form_row(userForm.login, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Login'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(userForm.password, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Mot de passe'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(userForm.nom, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Nom'}}) }}
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded">Annuler</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded">Créer</button>
+            </div>
+        {{ form_end(userForm) }}
+    </div>
+</div>
+
+
+</div>
+
+<script>
+ function openModal() {
+    document.getElementById('modal').classList.remove('hidden');
+    document.getElementById('content').classList.add('blur');
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+    document.getElementById('content').classList.remove('blur');
+}
+
+</script>
+{% endblock %}

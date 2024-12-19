@@ -43,31 +43,30 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
-{
-    // Récupérer l'utilisateur connecté
-    $user = $token->getUser();
+    {
+        // Récupérer l'utilisateur connecté
+        $user = $token->getUser();
 
-    // Vérifier si une URL de redirection existe
-    if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
-        return new RedirectResponse($targetPath);
+        // Vérifier si une URL de redirection existe
+        if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
+            return new RedirectResponse($targetPath);
+        }
+
+        // Redirection en fonction des rôles
+        if (in_array('ROLE_ADMIN', $user->getRoles())) {
+            return new RedirectResponse($this->urlGenerator->generate('dashboardUser.index'));
+        } elseif (in_array('ROLE_BOUTIQUIER', $user->getRoles())) {
+            return new RedirectResponse($this->urlGenerator->generate('dashboardBoutiquier.index'));
+        } elseif (in_array('ROLE_CLIENT', $user->getRoles())) {
+            return new RedirectResponse($this->urlGenerator->generate('clientDashboard.index'));
+        }
+
+        // Redirection par défaut si aucun rôle spécifique
+        return new RedirectResponse($this->urlGenerator->generate('app_login'));
     }
 
-    // Redirection en fonction des rôles
-    if (in_array('ROLE_BOUTIQUIER', $user->getRoles())) {
-        return new RedirectResponse($this->urlGenerator->generate('dashboardBoutiquier.index'));
-    } elseif (in_array('ROLE_CLIENT', $user->getRoles())) {
-        return new RedirectResponse($this->urlGenerator->generate('clientDashboard.index'));
+    protected function getLoginUrl(Request $request): string
+    {
+        return $this->urlGenerator->generate(self::LOGIN_ROUTE);
     }
-
-    // Redirection par défaut si aucun rôle spécifique
-    return new RedirectResponse($this->urlGenerator->generate('app_login'));
-}
-
-protected function getLoginUrl(Request $request): string
-{
-    return $this->urlGenerator->generate(self::LOGIN_ROUTE);
-}
-
-
-
 }

@@ -1,0 +1,115 @@
+{% extends 'baseAdmin.html.twig' %}
+
+{% block body %}
+<div class="p-6 bg-white rounded-lg shadow" id="content-container">
+    <!-- Titre et Bouton Ajouter -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2 text-indigo-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+            </svg>
+            <h1 class="text-lg font-bold">Liste Articles</h1>
+        </div>
+        <button 
+            onclick="openCreateModal()" 
+            class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600">
+            Ajouter un article
+        </button>
+    </div>
+
+    <!-- Tableau des Articles -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead class="bg-indigo-400">
+                <tr>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Nom</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Stock</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Prix</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                    <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-[#F6FBFD]' }}">
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ article.nom }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ article.qteStock }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ article.prix }}</td>
+                        <td class="px-4 py-2 text-center text-sm">
+                            <div class="flex justify-center space-x-2">
+                                <!-- Actions (Modifier/Supprimer) -->
+                                <a href="#" class="text-blue-500 hover:text-blue-700">
+                                    Modifier
+                                </a>
+                                <a href="#" class="text-red-500 hover:text-red-700">
+                                    Supprimer
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="px-4 py-2 text-sm text-center text-gray-500">Aucun article trouvé.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Popup Ajouter un Article -->
+<div id="create-modal" class="modal-overlay hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h3 class="text-lg font-bold text-indigo-500 mb-4">Ajouter un Article</h3>
+        {{ form_start(form2) }}
+            <div class="mb-4">
+                {{ form_row(form2.nom, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Nom'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(form2.qteStock, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Quantité en stock'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(form2.prix, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Prix'}}) }}
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeCreateModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded">Annuler</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded">Ajouter</button>
+            </div>
+        {{ form_end(form2) }}
+    </div>
+</div>
+
+<script>
+    function openCreateModal() {
+        document.getElementById('content-container').classList.add('blur');
+        document.getElementById('create-modal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+        document.getElementById('content-container').classList.remove('blur');
+        document.getElementById('create-modal').classList.add('hidden');
+    }
+</script>
+
+<style>
+    /* Blur effect */
+    .blur {
+        filter: blur(5px);
+        pointer-events: none;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+{% endblock %}

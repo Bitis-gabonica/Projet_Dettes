@@ -1,0 +1,192 @@
+{% extends 'baseAdmin.html.twig' %}
+
+{% block body %}
+<style>
+    /* Classe pour flouter le contenu */
+    .blur {
+        filter: blur(5px);
+        pointer-events: none; /* Empêche les interactions avec le contenu flouté */
+    }
+
+    /* Assurez-vous que la popup est au-dessus */
+    #modal, #create-modal {
+        z-index: 50; /* Popup au-dessus */
+    }
+
+    /* Arrière-plan semi-transparent */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5); /* Couche semi-transparente */
+        z-index: 40;
+        display: none; /* Masque la popup par défaut */
+        justify-content: center; /* Centre horizontalement */
+        align-items: center; /* Centre verticalement */
+    }
+
+    /* Lorsque la popup est active */
+    .modal-overlay.active {
+        display: flex;
+    }
+</style>
+<div id="content-container" class="p-6 bg-white rounded-lg shadow">
+    <!-- Titre et Bouton de Création -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2 text-indigo-500">
+           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5c4.142 0 7.5.895 7.5 2s-3.358 2-7.5 2-7.5-.895-7.5-2 3.358-2 7.5-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 11.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2m15 3.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2m15 3.25c0 1.105-3.358 2-7.5 2s-7.5-.895-7.5-2" />
+            </svg>
+            <h1 class="text-lg font-bold">Liste Utilisateurs</h1>
+        </div>
+        <button 
+            onclick="openCreateModal()" 
+            class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600">
+            Créer
+        </button>
+    </div>
+
+     <!-- Filtres -->
+    <div class="flex justify-start space-x-4 mb-6">
+        <a href="{{ path('utilisateurs.index') }}" 
+           class="px-4 py-2 rounded text-sm font-medium transition 
+                  {{ app.request.get('isActive') is null ? 'bg-indigo-500 text-white' : 'border border-indigo-500 text-indigo-500 hover:bg-indigo-100' }}">
+            Tous
+        </a>
+        <a href="{{ path('utilisateurs.index', { isActive: 1 }) }}" 
+           class="px-4 py-2 rounded text-sm font-medium transition 
+                  {{ app.request.get('isActive') == '1' ? 'bg-indigo-500 text-white' : 'border border-indigo-500 text-indigo-500 hover:bg-indigo-100' }}">
+            Actifs
+        </a>
+        <a href="{{ path('utilisateurs.index', { isActive: 0 }) }}" 
+           class="px-4 py-2 rounded text-sm font-medium transition 
+                  {{ app.request.get('isActive') == '0' ? 'bg-indigo-500 text-white' : 'border border-indigo-500 text-indigo-500 hover:bg-indigo-100' }}">
+            Inactifs
+        </a>
+    </div>
+
+    <!-- Tableau -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Nom</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Login</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Statut</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Rôle</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ user.nom }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ user.login }}</td>
+                        <td class="px-4 py-2 text-center text-sm">
+                            {% if user.active %}
+                                <span class="px-2 py-0.5 text-xs font-medium tracking-wide text-green-500 bg-green-50 rounded-full">Actif</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 text-xs font-medium tracking-wide text-red-500 bg-red-50 rounded-full">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">
+                            {{ user.roles[0] is defined ? user.roles[0] : 'Aucun rôle secondaire' }}
+                        </td>
+                        <td class="px-4 py-2 text-center text-sm">
+                            <div class="flex justify-center space-x-2">
+                                <button 
+                                    onclick="openModal('{{ user.id }}', '{{ user.active ? 'deactivate' : 'activate' }}')" 
+                                    class="text-indigo-500 hover:text-indigo-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-2 text-sm text-center text-gray-500">Aucun utilisateur trouvé.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modal" class="modal-overlay hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h3 class="text-lg font-bold text-indigo-500 mb-4">Confirmer l'Action</h3>
+        <p id="modal-message" class="mb-6 text-gray-700"></p>
+        <div class="flex justify-end space-x-2">
+            <button onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded">Annuler</button>
+            <a id="modal-confirm" href="#" class="px-4 py-2 bg-indigo-500 text-white rounded">Confirmer</a>
+        </div>
+    </div>
+</div>
+
+<div id="create-modal" class="modal-overlay hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h3 class="text-lg font-bold text-indigo-500 mb-4">Créer un utilisateur</h3>
+        {{ form_start(form) }}
+            <div class="mb-4">
+                {{ form_row(form.login, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Login'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(form.roles, {'attr': {'class': 'w-full p-2 border rounded'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(form.password, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Mot de passe'}}) }}
+            </div>
+            <div class="mb-4">
+                {{ form_row(form.nom, {'attr': {'class': 'w-full p-2 border rounded', 'placeholder': 'Nom'}}) }}
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeCreateModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded">Annuler</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded">Créer</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<script>
+    function openModal(userId, action) {
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirm = document.getElementById('modal-confirm');
+
+        // Définir le message de confirmation en fonction de l'action
+        modalMessage.textContent = action === 'activate' 
+            ? 'Voulez-vous activer cet utilisateur ?'
+            : 'Voulez-vous désactiver cet utilisateur ?';
+
+        // Définir l'URL pour l'action sur le bouton Confirmer
+        modalConfirm.onclick = function () {
+            // URL de l'action pour Symfony
+            const url = `/admin/liste-utilisateurs?action=${action}&id=${userId}`;
+            window.location.href = url;
+        };
+
+        // Afficher la popup
+        document.getElementById('content-container').classList.add('blur');
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('content-container').classList.remove('blur');
+        document.getElementById('modal').classList.remove('active');
+    }
+
+    function openCreateModal() {
+        document.getElementById('content-container').classList.add('blur');
+        document.getElementById('create-modal').classList.add('active');
+    }
+
+    function closeCreateModal() {
+        document.getElementById('content-container').classList.remove('blur');
+        document.getElementById('create-modal').classList.remove('active');
+    }
+</script>
+
+
+{% endblock %}
