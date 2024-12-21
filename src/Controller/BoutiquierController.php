@@ -30,6 +30,7 @@ use App\Entity\DemandeDette;
 use App\Form\FiltreDemandeType;
 use Symfony\Component\Validator\Constraints\IsNull;
 use App\Form\ValiderType;
+  use Knp\Component\Pager\PaginatorInterface;
 
 class BoutiquierController extends AbstractController
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,26 +99,35 @@ class BoutiquierController extends AbstractController
 
 
 
-    #[Route('/boutiquier/liste-clients', name: 'client.index')]
-    public function index(ClientRepository $clientRepository, Request $request): Response
-    {
-        
+  
 
-        $form = $this->createForm(FilterClientType::class);
-        $form->handleRequest($request);
-        $clients=$clientRepository->findAll();
+#[Route('/boutiquier/liste-clients', name: 'client.index')]
+public function index(ClientRepository $clientRepository, Request $request, PaginatorInterface $paginator): Response
+{
+    $form = $this->createForm(FilterClientType::class);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $data=$form->getData();
-            $clients=$clientRepository->filterClients($data['numero'],$data['createUser']);
-               
-        }
+    // Récupérer tous les clients
+    $query = $clientRepository->createQueryBuilder('c')->getQuery();
 
-        return $this->render('boutiquier/index.html.twig', [
-            'clients' => $clients,
-            'form'=> $form->createView(),
-        ]);
+    if ($form->isSubmitted() && $form->isValid()) {
+        $data = $form->getData();
+        $query = $clientRepository->filterClients($data['numero'], $data['createUser']);
     }
+
+    // Pagination - Limite de 8 clients par page
+    $clients = $paginator->paginate(
+        $query, // Requête ou tableau des données
+        $request->query->getInt('page', 1), // Numéro de la page, par défaut 1
+        8 // Limite d'éléments par page
+    );
+
+    return $this->render('boutiquier/index.html.twig', [
+        'clients' => $clients,
+        'form' => $form->createView(),
+    ]);
+}
+
 
     #[Route('/client/form', name: 'client.create')]
     public function create(\Symfony\Component\HttpFoundation\Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher): Response

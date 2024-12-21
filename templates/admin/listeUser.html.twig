@@ -68,18 +68,18 @@
     <!-- Tableau -->
     <div class="overflow-x-auto">
         <table class="min-w-full table-auto">
-            <thead class="bg-gray-100">
+            <thead class="bg-indigo-500">
                 <tr>
-                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Nom</th>
-                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Login</th>
-                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Statut</th>
-                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Rôle</th>
-                    <th class="px-4 py-2 text-center text-sm font-semibold text-gray-600">Actions</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Nom</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Login</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Statut</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold  text-white">Rôle</th>
+                    <th class="px-4 py-2 text-center text-sm font-semibold text-white">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-gray-50' }}">
+                    <tr class="{{ loop.index is odd ? 'bg-white' : 'bg-[#F6FBFD]' }}">
                         <td class="px-4 py-2 text-center text-sm text-gray-700">{{ user.nom }}</td>
                         <td class="px-4 py-2 text-center text-sm text-gray-700">{{ user.login }}</td>
                         <td class="px-4 py-2 text-center text-sm">

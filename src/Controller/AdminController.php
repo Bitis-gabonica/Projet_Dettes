@@ -37,11 +37,12 @@ use App\Form\UserFilterType;
 use App\Form\ArticleFilterType;
 use App\Form\ArticleType;
 use App\Entity\Article;
+use App\Form\ArticleQteType;
 
 class AdminController extends AbstractController
 {
     #[Route('/admin/dashboard', name: 'dashboardUser.index')]
-    public function indexDahboard(Request $request,ClientRepository $clientRepository): Response
+    public function indexDahboard(Request $request,ClientRepository $clientRepository,UserRepository $userRepository,ArticleRepository $articleRepository,DetteRepository $detteRepository): Response
     {
         $form=$this->createForm(searchClientByTelType::class);
         $form->handleRequest($request);
@@ -53,11 +54,29 @@ class AdminController extends AbstractController
         }
 
 
+        $users=$userRepository->findAll();
+        $articlesEnStock = $articleRepository->findAllWithStockGreaterThanZero();
+        $articles=$articleRepository->findAll();
+        $dettes=$detteRepository->findAll();
+        $clients=$clientRepository->findAll();
+
+
+
+        
+
+
+
+
 
 
         return $this->render('admin/dashboardUser.html.twig', [
             'form'=> $form->createView(),
             'client'=> $client,
+            'users'=>$users,
+            'articlesEnStock' => $articlesEnStock,
+            'articles' => $articles,
+            'dettes' => $dettes,
+            'clients' => $clients,
         ]);
     }
 
@@ -205,26 +224,23 @@ public function listArticles(ArticleRepository $articleRepository, Request $requ
 
     // Récupérer tous les articles
     $articles = $articleRepository->findAll();
+    $statut = $request->query->get('statut'); // Vérifie la valeur depuis l'URL
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        $data = $form->getData();
-        $statut = $data['statut'];
-
-        // Appliquer le filtre sur la disponibilité
-        if ($statut !== null) {
-            if ($statut) {
-                $articles = $articleRepository->createQueryBuilder('a')
-                    ->where('a.qteStock > 0')
-                    ->getQuery()
-                    ->getResult();
-            } else {
-                $articles = $articleRepository->createQueryBuilder('a')
-                    ->where('a.qteStock <= 0')
-                    ->getQuery()
-                    ->getResult();
-            }
-        }
+if ($statut !== null) {
+    if ($statut == 1) {
+        $articles = $articleRepository->createQueryBuilder('a')
+            ->where('a.qteStock > 0')
+            ->getQuery()
+            ->getResult();
+    } elseif ($statut == 0) {
+        $articles = $articleRepository->createQueryBuilder('a')
+            ->where('a.qteStock = 0')
+            ->getQuery()
+            ->getResult();
     }
+}
+
+    
 
     $article=new Article();
     $form2 = $this->createForm(ArticleType::class, $article);
@@ -238,12 +254,108 @@ public function listArticles(ArticleRepository $articleRepository, Request $requ
         return $this->redirectToRoute('article.index');
 
     }
+
+
+    $form3 = $this->createForm(ArticleQteType::class);
+    $form3->handleRequest($request);
+    
+    if ($form3->isSubmitted() && $form3->isValid()) {
+        $articleId = $request->request->get('article_id'); // Récupère l'ID de l'article depuis le formulaire
+    
+        if (!$articleId) {
+            $this->addFlash('error', 'Identifiant de l\'article manquant.');
+            return $this->redirectToRoute('article.index');
+        }
+    
+        $article = $articleRepository->find($articleId);
+    
+        if (!$article) {
+            $this->addFlash('error', 'Article introuvable.');
+            return $this->redirectToRoute('article.index');
+        }
+    
+        $data = $form3->getData();
+        $article->setQteStock($data['quantite']);
+    
+        $entityManager->persist($article);
+        $entityManager->flush();
+    
+        $this->addFlash('success', 'Stock mis à jour avec succès.');
+        return $this->redirectToRoute('article.index');
+    }
+    
+
+    
+
+
+
+
     return $this->render('admin/listeArticle.html.twig', [
         'articles' => $articles,
         'form' => $form->createView(),
         'form2' => $form2->createView(),
+        'form3'=> $form3->createView(),
     ]);
 }
+
+#[Route('/admin/dettes', name: 'dettesAdmin.index')]
+public function listerDettes(DetteRepository $detteRepository, Request $request, EntityManagerInterface $entityManager): Response
+{
+    // Récupérer uniquement les dettes non archivées
+    $dettes = $detteRepository->createQueryBuilder('d')
+        ->where('d.statut = true') // Supposant que "statut = true" signifie non archivé
+        ->getQuery()
+        ->getResult();
+
+    $form = $this->createForm(DetteFilterType::class);
+    $form->handleRequest($request);
+
+    if ($form->isSubmitted() && $form->isValid()) {
+        $data = $form->getData();
+
+        if (!is_null($data['statut'])) { // Filtrer uniquement si le statut est défini
+            $statut = (bool) $data['statut'];
+
+            // Filtrer les dettes non archivées
+            $dettes = $detteRepository->createQueryBuilder('d')
+                ->where('d.statut = :statut')
+                ->setParameter('statut', $statut)
+                ->getQuery()
+                ->getResult();
+        }
+    }
+
+    // Traitement pour archiver une dette
+    if ($request->isMethod('POST') && $request->request->has('dette_id')) {
+        $detteId = $request->request->get('dette_id');
+
+        if (!$detteId) {
+            $this->addFlash('error', 'Identifiant de la dette manquant.');
+            return $this->redirectToRoute('dettesAdmin.index');
+        }
+
+        $dette = $detteRepository->find($detteId);
+
+        if (!$dette) {
+            $this->addFlash('error', 'Dette introuvable.');
+            return $this->redirectToRoute('dettesAdmin.index');
+        }
+
+        $dette->setStatut(false); // Marquer la dette comme archivée
+        $entityManager->persist($dette);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Dette archivée avec succès.');
+        return $this->redirectToRoute('dettesAdmin.index');
+    }
+
+    return $this->render('admin/listeDette.html.twig', [
+        'dettes' => $dettes,
+        'form' => $form->createView(),
+    ]);
+}
+
+
 
 
 

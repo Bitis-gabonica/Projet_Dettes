@@ -16,6 +16,16 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
+    // src/Repository/ArticleRepository.php
+
+public function findAllWithStockGreaterThanZero()
+{
+    return $this->createQueryBuilder('a')
+        ->where('a.qteStock > 0')
+        ->getQuery()
+        ->getResult();
+}
+
     //    /**
     //     * @return Article[] Returns an array of Article objects
     //     */
